@@ -3,7 +3,7 @@ import boto3
 import os
 from dotenv import load_dotenv
 from botocore.client import Config
-from constants import AppConstants
+from utils.constants import AppConstants
 
 # Load environment variables
 load_dotenv()
