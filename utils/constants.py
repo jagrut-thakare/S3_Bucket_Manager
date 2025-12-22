@@ -118,3 +118,12 @@ class AppConstants:
     SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB']
     SIZE_FORMAT_STRING = "{size:.1f} {unit}"
     SIZE_PB_FORMAT = "{size:.1f} PB"
+
+    # Bulk Delete
+    TABLE_HEADER_SELECT = "**Select**"
+    BUTTON_DELETE_SELECTED = "🗑️ Delete Selected"
+    DELETE_SUCCESS_MSG = "Successfully deleted {count} files."
+    DELETE_ERROR_MSG = "Error deleting files: "
+    NO_FILES_SELECTED_MSG = "No files selected for deletion."
+    CHECKBOX_LABEL = "Select"
+    DELETE_SPINNER_PREFIX = "Deleting selected files..."
