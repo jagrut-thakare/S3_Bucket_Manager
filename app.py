@@ -2,8 +2,8 @@ import streamlit as st
 import boto3
 import os
 from dotenv import load_dotenv
-from botocore.client import Config
 from utils.constants import AppConstants
+from utils.s3_uploader import upload_file_v2
 
 # Load environment variables
 load_dotenv()
@@ -147,8 +147,18 @@ if selected_bucket and s3_client:
                     # Construct key based on current path
                     file_key = f"{st.session_state[AppConstants.SESSION_CURRENT_PATH]}{uploaded_file.name}"
                     
+                    
                     with st.spinner(f"{AppConstants.UPLOAD_SPINNER_PREFIX}{file_key}..."):
-                        s3_client.upload_fileobj(uploaded_file, selected_bucket, file_key)
+                        # Use the v2 uploader function
+                        upload_file_v2(
+                            file_obj=uploaded_file,
+                            bucket_name=selected_bucket,
+                            object_key=file_key,
+                            access_key=ACCESS_KEY_ID,
+                            secret_key=SECRET_ACCESS_KEY,
+                            endpoint_url=ENDPOINT_URL,
+                            region_name=region
+                        )
                     st.success(f"{AppConstants.UPLOAD_SUCCESS_PREFIX}{file_key}")
                     st.rerun()
                 except Exception as e:
