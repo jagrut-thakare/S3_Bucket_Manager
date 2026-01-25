@@ -27,6 +27,54 @@ def upload_file_v2(file_obj, bucket_name, object_key, access_key, secret_key, en
     s3_v2_client.upload_fileobj(file_obj, bucket_name, object_key)
     return True
 
+def create_folder(bucket_name, folder_path, access_key, secret_key, region_name, endpoint_url=None):
+    """
+    Creates a 'folder' in S3 by putting a 0-byte object with a trailing slash.
+    """
+    kwargs = {
+        AppConstants.AWS_ACCESS_KEY_ID: access_key,
+        AppConstants.AWS_SECRET_ACCESS_KEY: secret_key,
+        AppConstants.AWS_REGION_NAME: region_name,
+        AppConstants.AWS_CONFIG: Config(signature_version='s3')
+    }
+    if endpoint_url:
+        kwargs[AppConstants.AWS_ENDPOINT_URL] = endpoint_url
+        
+    s3_v2_client = boto3.client(AppConstants.S3_SERVICE_NAME, **kwargs)
+    
+    # Ensure trailing slash
+    if not folder_path.endswith(AppConstants.PATH_SEPARATOR):
+        folder_path += AppConstants.PATH_SEPARATOR
+        
+    s3_v2_client.put_object(Bucket=bucket_name, Key=folder_path)
+    return True
+
+def delete_folder(bucket_name, folder_path, access_key, secret_key, region_name, endpoint_url=None):
+    """
+    Deletes a 'folder' and all its contents in S3.
+    """
+    kwargs = {
+        AppConstants.AWS_ACCESS_KEY_ID: access_key,
+        AppConstants.AWS_SECRET_ACCESS_KEY: secret_key,
+        AppConstants.AWS_REGION_NAME: region_name,
+        AppConstants.AWS_CONFIG: Config(signature_version='s3v4')
+    }
+    if endpoint_url:
+        kwargs[AppConstants.AWS_ENDPOINT_URL] = endpoint_url
+        
+    s3_v2_client = boto3.client(AppConstants.S3_SERVICE_NAME, **kwargs)
+    
+    # List all objects with the folder prefix
+    paginator = s3_v2_client.get_paginator('list_objects_v2')
+    pages = paginator.paginate(Bucket=bucket_name, Prefix=folder_path)
+    
+    for page in pages:
+        if 'Contents' in page:
+            # Delete one by one to avoid Missing Content-MD5 header error with delete_objects
+            for obj in page['Contents']:
+                s3_v2_client.delete_object(Bucket=bucket_name, Key=obj['Key'])
+    return True
+
 @st.cache_resource
 def get_s3_client(region_name):
     """

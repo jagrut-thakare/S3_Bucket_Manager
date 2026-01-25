@@ -49,13 +49,13 @@ class AppConstants:
 
     # Main App Logic
     HEADER_BUCKET_PREFIX = "Bucket: "
-    UPLOAD_SUBHEADER = "Upload File"
+    UPLOAD_SUBHEADER = "⬆️ Upload File"
     UPLOAD_EXPANDER_LABEL = "Upload a file to current folder"
-    UPLOAD_FILE_LABEL = "Choose a file"
-    UPLOAD_BUTTON_LABEL = "Upload"
-    UPLOAD_SUCCESS_PREFIX = "Uploaded: "
-    UPLOAD_FAILED_PREFIX = "Upload failed: "
-    UPLOAD_SPINNER_PREFIX = "Uploading "
+    UPLOAD_FILE_LABEL = "Choose files (or drag & drop a folder or zip file)"
+    UPLOAD_BUTTON_LABEL = "⬆️ Upload"
+    UPLOAD_SUCCESS_PREFIX = "⬆️ Uploaded: "
+    UPLOAD_FAILED_PREFIX = "⬆️ Upload failed: "
+    UPLOAD_SPINNER_PREFIX = "⬆️ Uploading "
     FORM_UPLOAD = "upload_form"
     
     # Navigation
@@ -127,3 +127,12 @@ class AppConstants:
     NO_FILES_SELECTED_MSG = "No files selected for deletion."
     CHECKBOX_LABEL = "Select"
     DELETE_SPINNER_PREFIX = "Deleting selected files..."
+
+    # Create Folder
+    CREATE_FOLDER_SUBHEADER = "📁 Create Folder"
+    CREATE_FOLDER_EXPANDER = "📁 Create New Folder"
+    CREATE_FOLDER_LABEL = "📁 Folder Name"
+    CREATE_FOLDER_BUTTON = "📁 Create Folder"
+    CREATE_FOLDER_SUCCESS = "📁 Created folder: "
+    CREATE_FOLDER_ERROR = "📁 Error creating folder: "
+    CREATE_FOLDER_EXISTS_OR_INVALID = "📁 Invalid folder name or folder already exists."

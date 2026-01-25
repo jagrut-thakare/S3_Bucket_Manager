@@ -1,7 +1,7 @@
 import streamlit as st
 from utils.constants import AppConstants
 from components.sidebar import render_sidebar
-from components.uploader import render_upload_section
+from components.uploader import render_create_folder, render_upload_section
 from components.navigation import render_navigation
 from components.explorer import render_file_explorer
 from utils.session import init_session_state
@@ -22,8 +22,15 @@ def main():
     if selected_bucket and s3_client:
         st.header(f"{AppConstants.HEADER_BUCKET_PREFIX}{selected_bucket}")
         
-        # 3. Upload Section
-        render_upload_section(s3_client, selected_bucket, st.session_state[AppConstants.SESSION_CURRENT_PATH], region)
+        # 3. Actions Section (Upload & Create Folder)
+        
+        col_action_1, col_action_2 = st.columns(2)
+        
+        with col_action_1:
+             render_upload_section(s3_client, selected_bucket, st.session_state[AppConstants.SESSION_CURRENT_PATH], region)
+             
+        with col_action_2:
+             render_create_folder(selected_bucket, st.session_state[AppConstants.SESSION_CURRENT_PATH], region)
 
         st.divider()
 
@@ -31,7 +38,7 @@ def main():
         render_navigation()
 
         # 5. File Explorer
-        render_file_explorer(s3_client, selected_bucket, st.session_state[AppConstants.SESSION_CURRENT_PATH], expiration_seconds)
+        render_file_explorer(s3_client, selected_bucket, st.session_state[AppConstants.SESSION_CURRENT_PATH], expiration_seconds, region)
 
     else:
         st.info(AppConstants.INFO_SELECT_BUCKET)
