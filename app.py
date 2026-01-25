@@ -1,16 +1,7 @@
 import streamlit as st
-import boto3
-import os
-from dotenv import load_dotenv
 from utils.constants import AppConstants
-from utils.s3_uploader import upload_file_v2
-
-# Load environment variables
-load_dotenv()
-
-ACCESS_KEY_ID = os.getenv(AppConstants.ENV_ACCESS_KEY_ID)
-SECRET_ACCESS_KEY = os.getenv(AppConstants.ENV_SECRET_ACCESS_KEY)
-ENDPOINT_URL = os.getenv(AppConstants.ENV_ENDPOINT_URL)
+from utils.bucket import upload_file_v2, get_s3_client, get_keys, format_size
+from config import ACCESS_KEY_ID, SECRET_ACCESS_KEY, ENDPOINT_URL
 
 st.set_page_config(layout=AppConstants.PAGE_LAYOUT, page_title=AppConstants.PAGE_TITLE)
 
@@ -30,24 +21,6 @@ expiration_hours = st.sidebar.number_input(
     value=AppConstants.EXPIRATION_DEFAULT_HOURS
 )
 expiration_seconds = int(expiration_hours * AppConstants.SECONDS_PER_HOUR)
-
-@st.cache_resource
-def get_s3_client(region_name):
-    """
-    Initialize S3 client with caching.
-    """
-    kwargs = {
-        AppConstants.AWS_ACCESS_KEY_ID: ACCESS_KEY_ID,
-        AppConstants.AWS_SECRET_ACCESS_KEY: SECRET_ACCESS_KEY,
-        AppConstants.AWS_REGION_NAME: region_name,
-        # Removing explicit signature version to allow longer expirations 
-        # as seen in download_from_s3.py
-        # AppConstants.AWS_CONFIG: Config(signature_version=AppConstants.S3_SIGNATURE_VERSION)
-    }
-    if ENDPOINT_URL:
-        kwargs[AppConstants.AWS_ENDPOINT_URL] = ENDPOINT_URL
-        
-    return boto3.client(AppConstants.S3_SERVICE_NAME, **kwargs)
 
 # Initialize Client
 s3_client = None
@@ -80,57 +53,6 @@ if AppConstants.SESSION_LAST_BUCKET not in st.session_state:
 if st.session_state[AppConstants.SESSION_LAST_BUCKET] != selected_bucket:
     st.session_state[AppConstants.SESSION_CURRENT_PATH] = AppConstants.EMPTY_STRING
     st.session_state[AppConstants.SESSION_LAST_BUCKET] = selected_bucket
-
-def get_keys(bucket_name, prefix=""):
-    """
-    List keys in a bucket under a specific prefix, emulating a folder structure.
-    Returns: folders (list of names), files (list of dicts with details)
-    """
-    folders = set()
-    files = []
-    
-    paginator = s3_client.get_paginator(AppConstants.S3_LIST_OBJECTS_V2)
-    # We add a delimiter to get common prefixes (folders)
-    for page in paginator.paginate(
-        **{
-            AppConstants.PAGINATOR_BUCKET: bucket_name, 
-            AppConstants.PAGINATOR_PREFIX: prefix, 
-            AppConstants.PAGINATOR_DELIMITER: AppConstants.PATH_SEPARATOR
-        }
-    ):
-        # Extract subfolders (CommonPrefixes)
-        if AppConstants.KEY_COMMON_PREFIXES in page:
-            for p in page[AppConstants.KEY_COMMON_PREFIXES]:
-                # Prefix is like 'folder/subfolder/'
-                # We want just the folder name relative to current prefix
-                full_prefix = p[AppConstants.KEY_PREFIX]
-                folder_name = full_prefix[len(prefix):].strip(AppConstants.PATH_SEPARATOR)
-                folders.add(folder_name)
-        
-        # Extract files (Contents)
-        if AppConstants.KEY_CONTENTS in page:
-            for obj in page[AppConstants.KEY_CONTENTS]:
-                key = obj[AppConstants.KEY_KEY]
-                # Skip the folder itself if it appears as a 0-byte object
-                if key == prefix:
-                    continue
-                
-                file_name = key[len(prefix):]
-                files.append({
-                    "Key": key,
-                    "Name": file_name,
-                    "Size": obj[AppConstants.KEY_SIZE],
-                    "LastModified": obj[AppConstants.KEY_LAST_MODIFIED]
-                })
-    
-    return sorted(list(folders)), sorted(files, key=lambda x: x["Name"])
-
-def format_size(size):
-    for unit in AppConstants.SIZE_UNITS:
-        if size < 1024.0:
-            return AppConstants.SIZE_FORMAT_STRING.format(size=size, unit=unit)
-        size /= 1024.0
-    return AppConstants.SIZE_PB_FORMAT.format(size=size)
 
 if selected_bucket and s3_client:
     st.header(f"{AppConstants.HEADER_BUCKET_PREFIX}{selected_bucket}")
@@ -191,7 +113,7 @@ if selected_bucket and s3_client:
 
     try:
         # Fetch items for the current path
-        folders, files_list = get_keys(selected_bucket, st.session_state[AppConstants.SESSION_CURRENT_PATH])
+        folders, files_list = get_keys(s3_client,selected_bucket, st.session_state[AppConstants.SESSION_CURRENT_PATH])
         
         if not folders and not files_list:
             st.info(AppConstants.DIR_EMPTY_INFO)
